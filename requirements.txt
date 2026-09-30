@@ -1,0 +1,7 @@
+# 本项目【不依赖任何第三方库】，只需要 Python 3.8+ 的标准库即可运行。
+# 因此这个文件是空的（保留它只是为了告诉后来人：不用 pip install 任何东西）。
+#
+# 如果你确实想用虚拟环境隔离，可以这样：
+#   python -m venv .venv
+#   # Windows:  .venv\Scripts\activate
+#   # macOS/Linux:  source .venv/bin/activate

@@ -1,0 +1,19 @@
+# 运行产物：随时可以重新生成，不入库
+output/
+
+# git 历史备份包（备份用，避免把仓库自身塞进仓库）
+*.bundle
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini

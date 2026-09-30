@@ -1,0 +1,22 @@
+{
+  "seed": 20260930,
+  "total_rows": 290,
+  "injected": {
+    "正常": 250,
+    "邮箱域名大写（应视为正常）": 1,
+    "学号非纯数字": 6,
+    "邮箱与学号不匹配": 7,
+    "必填项为空": 8,
+    "重复报名": 9,
+    "两个志愿填成同一个": 4,
+    "志愿不在部门清单内": 3,
+    "姓名疑似异常": 2
+  },
+  "identical_dup_groups": 2,
+  "identical_dup_rows": 4,
+  "dup_groups": 4,
+  "dup_flagged_rows": 9,
+  "expect_error_rows": 30,
+  "expect_dropped_rows": 26,
+  "expect_clean_rows": 264
+}
