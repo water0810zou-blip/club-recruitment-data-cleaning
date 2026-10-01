@@ -296,6 +296,7 @@ gh pr create --base main --head feat/01-overview --title "feat(需求1): 读入 
 │   ├── fixtures/tiny.csv         ← 5 行小样本，用来钉死口径
 │   └── expected_sample_counts.json
 ├── docs/PR-0x-*.md               ← 三次 PR 的描述
+├── docs/RELEASE-v0.1.0.md        ← v0.1.0 发布说明（GitHub Release 正文）
 └── output/                       ← 运行产物（重新跑就会重建）
 ```
 
