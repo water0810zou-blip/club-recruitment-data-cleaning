@@ -292,7 +292,7 @@ gh pr create --base main --head feat/01-overview --title "feat(需求1): 读入 
 │   ├── validate.py               ← 需求2：校验与清洗（问题清单）
 │   └── report.py                 ← 需求3：统计与导出
 ├── tools/make_sample_data.py     ← 生成示例数据（固定种子，可复现）
-├── tests/                        ← 51 条单元测试
+├── tests/                        ← 53 条单元测试
 │   ├── fixtures/tiny.csv         ← 5 行小样本，用来钉死口径
 │   └── expected_sample_counts.json
 ├── docs/PR-0x-*.md               ← 三次 PR 的描述
@@ -317,3 +317,8 @@ Windows 的 cmd 默认 GBK。用 Git Bash / PowerShell 跑，或先执行 `chcp 
 
 **Q：数据会上传到哪里吗？**
 不会。整个工具只读本地 CSV、只写本地文件，没有网络请求，也没有任何 AI 调用。
+
+## 开源协议
+
+本项目采用 **MIT License**，见仓库根目录的 [`LICENSE`](LICENSE)：可自由使用、修改、分发，
+作者不担责；只需保留版权声明。仓库里的报名数据请按真实情况自行脱敏后再公开。
