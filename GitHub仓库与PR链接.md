@@ -6,6 +6,13 @@
 
 https://github.com/water0810zou-blip/club-recruitment-data-cleaning
 
+## Release
+
+**v0.1.0**（已发布）：https://github.com/water0810zou-blip/club-recruitment-data-cleaning/releases/tag/v0.1.0
+- 标题：v0.1.0 · 报名表体检 → 校验 → 清洗 → 统计，一条命令跑完
+- 标签：`v0.1.0`（附注标签，指向 `de39fa0`，含 `docs/RELEASE-v0.1.0.md` 发布说明）
+- 正文要点：三大功能块（概览 / 校验清洗 / 统计导出）、产物清单、快速开始、53 条测试、已知边界、MIT License
+
 ## 三次 PR（均已合并进 main）
 
 | PR | 对应需求 | 该 PR 的改动文件（diff 只含本次需求） | 链接 |
