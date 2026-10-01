@@ -46,6 +46,27 @@ def count_by_first_choice(rows: Sequence[Dict[str, str]]) -> List[Tuple[str, int
     return result
 
 
+def count_by_center(rows: Sequence[Dict[str, str]]) -> List[Tuple[str, int, float]]:
+    """按所属中心汇总第一志愿（同一中心下设的部门合并成一条）。
+
+    返回 [(中心, 人数, 占比)]，按人数降序、名称升序。
+    志愿值不在部门→中心映射里（留空、误填成中心名、乱填的脏数据）
+    归入「(志愿不在中心清单内)」，让人工一眼看出哪些需要确认归属，
+    而不是静默丢掉。
+    """
+    counter = Counter()
+    for r in rows:
+        c1 = common.normalize(r.get("志愿1", ""))
+        if not c1:
+            counter["(未填写)"] += 1
+        else:
+            counter[common.DEPARTMENT_CENTERS.get(c1, "(志愿不在中心清单内)")] += 1
+    total = sum(counter.values())
+    result = [(center, cnt, (cnt / total if total else 0.0)) for center, cnt in counter.items()]
+    result.sort(key=lambda item: (-item[1], item[0]))
+    return result
+
+
 def count_choice_completeness(rows: Sequence[Dict[str, str]]) -> List[Tuple[str, int, float]]:
     """统计两个志愿的填写情况，返回 [(口径, 人数, 占比)]。
 
@@ -108,8 +129,8 @@ def render_table_md(title: str, headers: Sequence[str], body: Sequence[Sequence[
 # --------------------------------------------------------------------------
 
 def render_report(*, path: str, total_rows: int, clean_rows, dropped, dup_groups,
-                  by_first, completeness, by_second, keep_problems: bool, output_paths: Dict[str, str],
-                  departments: Sequence[str] = ()) -> str:
+                  by_first, completeness, by_second, by_center, keep_problems: bool,
+                  output_paths: Dict[str, str], departments: Sequence[str] = ()) -> str:
     lines: List[str] = []
     bar = "=" * 66
     total_clean = len(clean_rows)
@@ -148,7 +169,27 @@ def render_report(*, path: str, total_rows: int, clean_rows, dropped, dup_groups
                      f"已在问题清单里标为「提示」，建议人工确认归属后再并入正式分组。")
     lines.append("")
 
-    lines.append("【三】两个志愿的填写情况")
+    # 中心维度：把同一中心下设的部门并成一条，看三个中心各自收到多少人
+    lines.append("【三】按中心汇总（同一中心的部门合并统计）")
+    lines.append("  " + common.pad("所属中心", 16) + common.pad("人数", 8, "right")
+                 + common.pad("占比", 10, "right") + "  " + "占比条形图")
+    lines.append("  " + "-" * 62)
+    max_center = max((cnt for _c, cnt, _p in by_center), default=1)
+    for center, cnt, ratio in by_center:
+        bar_len = round(cnt / max_center * 16) if max_center else 0
+        lines.append("  " + common.pad(center, 16) + common.pad(cnt, 8, "right")
+                     + common.pad(f"{ratio:.1%}", 10, "right") + "  " + "█" * bar_len)
+    lines.append("  " + "-" * 62)
+    lines.append("  " + common.pad("合计", 16) + common.pad(total_clean, 8, "right")
+                 + common.pad("100.0%", 10, "right"))
+    outside = [c for c, _n, _r in by_center if c.startswith("(")]
+    if outside:
+        lines.append("")
+        lines.append(f"  注：{'、'.join(outside)} 的人第一志愿不在部门→中心映射里，"
+                     f"请人工确认归属后再并入中心汇总。")
+    lines.append("")
+
+    lines.append("【四】两个志愿的填写情况")
     lines.append("  " + common.pad("情况", 20) + common.pad("人数", 8, "right")
                  + common.pad("占比", 10, "right"))
     lines.append("  " + "-" * 40)
@@ -167,12 +208,12 @@ def render_report(*, path: str, total_rows: int, clean_rows, dropped, dup_groups
     lines.append("")
 
     if by_second:
-        lines.append("【四】附加参考：第二志愿热度（仅统计填了第二志愿的人）")
+        lines.append("【五】附加参考：第二志愿热度（仅统计填了第二志愿的人）")
         for choice, cnt in by_second:
             lines.append(f"  {common.pad(choice, 14)}{cnt} 人次")
         lines.append("")
 
-    lines.append("【五】输出文件")
+    lines.append("【六】输出文件")
     for label, out_path in output_paths.items():
         lines.append(f"  {common.pad(label, 22)}{out_path}")
     lines.append(bar)
@@ -221,6 +262,7 @@ def run(input_path: str, output_dir: str, *, id_length: int = validate.DEFAULT_I
     by_first = count_by_first_choice(stat_rows)
     completeness = count_choice_completeness(stat_rows)
     by_second = count_second_choice(stat_rows)
+    by_center = count_by_center(stat_rows)
 
     # ---- 汇总表：按第一志愿 ----
     summary_rows = [{"第一志愿": choice, "人数": cnt, "占比": f"{ratio:.2%}"}
@@ -229,6 +271,14 @@ def run(input_path: str, output_dir: str, *, id_length: int = validate.DEFAULT_I
     summary_headers = ["第一志愿", "人数", "占比"]
     path_summary = common.write_csv(os.path.join(output_dir, "汇总表_按第一志愿.csv"),
                                     summary_headers, summary_rows)
+
+    # ---- 汇总表：按中心（同一中心下设的部门合并成一条）----
+    center_rows = [{"所属中心": center, "人数": cnt, "占比": f"{ratio:.2%}"}
+                   for center, cnt, ratio in by_center]
+    center_rows.append({"所属中心": "合计", "人数": len(stat_rows), "占比": "100.00%"})
+    center_headers = ["所属中心", "人数", "占比"]
+    path_center = common.write_csv(os.path.join(output_dir, "汇总表_按中心.csv"),
+                                   center_headers, center_rows)
 
     # ---- 汇总表：双志愿填写情况 ----
     complete_rows = [{"情况": label, "人数": cnt, "占比": f"{ratio:.2%}"}
@@ -247,6 +297,10 @@ def run(input_path: str, output_dir: str, *, id_length: int = validate.DEFAULT_I
                           summary_headers,
                           [[r["第一志愿"], r["人数"], r["占比"]] for r in summary_rows],
                           ["left", "right", "right"])
+    md += "\n" + render_table_md("按中心汇总",
+                                 center_headers,
+                                 [[r["所属中心"], r["人数"], r["占比"]] for r in center_rows],
+                                 ["left", "right", "right"])
     md += "\n" + render_table_md("两个志愿的填写情况",
                                  complete_headers,
                                  [[r["情况"], r["人数"], r["占比"]] for r in complete_rows],
@@ -272,6 +326,7 @@ def run(input_path: str, output_dir: str, *, id_length: int = validate.DEFAULT_I
 
     output_paths = {
         "按第一志愿汇总表": path_summary,
+        "按中心汇总表": path_center,
         "双志愿填写情况汇总表": path_complete,
         "汇总表（Markdown）": path_md,
         "清洗后数据": path_clean,
@@ -281,7 +336,8 @@ def run(input_path: str, output_dir: str, *, id_length: int = validate.DEFAULT_I
     report = render_report(path=input_path, total_rows=len(rows), clean_rows=clean_rows,
                            dropped=dropped, dup_groups=dup_groups, by_first=by_first,
                            completeness=completeness, by_second=by_second,
-                           keep_problems=keep_problems, output_paths=output_paths,
+                           by_center=by_center, keep_problems=keep_problems,
+                           output_paths=output_paths,
                            departments=departments)
     path_report = common.write_text(os.path.join(output_dir, "统计报告.txt"), report)
     if verbose:

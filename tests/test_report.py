@@ -25,7 +25,7 @@ EXPECT = os.path.join(ROOT, "tests", "expected_sample_counts.json")
 TINY = os.path.join(ROOT, "tests", "fixtures", "tiny.csv")
 
 
-def row(line, name="张三", sid="2023000001", email=None, c1="技术部", c2="", ref=""):
+def row(line, name="张三", sid="2023000001", email=None, c1="项目开发部", c2="", ref=""):
     if email is None:
         email = f"{sid}@{validate.EMAIL_DOMAIN}" if sid else ""
     return {"姓名": name, "学号": sid, "邮箱": email,
@@ -39,23 +39,39 @@ def read_csv(path):
 
 class TestGrouping(unittest.TestCase):
     def test_count_and_order(self):
-        rows = [row(2, c1="技术部"), row(3, name="李四", sid="2023000002", c1="宣传部"),
-                row(4, name="王五", sid="2023000003", c1="技术部"),
-                row(5, name="赵六", sid="2023000004", c1="技术部")]
+        rows = [row(2, c1="项目开发部"), row(3, name="李四", sid="2023000002", c1="品牌传播部"),
+                row(4, name="王五", sid="2023000003", c1="项目开发部"),
+                row(5, name="赵六", sid="2023000004", c1="项目开发部")]
         grouped = report.count_by_first_choice(rows)
-        self.assertEqual(grouped[0][:2], ("技术部", 3))
-        self.assertEqual(grouped[1][:2], ("宣传部", 1))
+        self.assertEqual(grouped[0][:2], ("项目开发部", 3))
+        self.assertEqual(grouped[1][:2], ("品牌传播部", 1))
         self.assertAlmostEqual(grouped[0][2], 0.75)
 
     def test_blank_first_choice_is_kept_as_unknown(self):
-        rows = [row(2, c1=""), row(3, name="李四", sid="2023000002", c1="技术部")]
+        rows = [row(2, c1=""), row(3, name="李四", sid="2023000002", c1="项目开发部")]
         grouped = dict((c, n) for c, n, _r in report.count_by_first_choice(rows))
         self.assertEqual(grouped["(未填写)"], 1)
 
+    def test_count_by_center_merges_departments_of_one_center(self):
+        rows = [row(2, c1="项目开发部"), row(3, c1="创新创业部"),   # 都在技术研发中心
+                row(4, c1="品牌传播部"),                          # 运营管理中心
+                row(5, c1="赛事运营部")]                          # 对外合作中心
+        centers = dict((c, n) for c, n, _r in report.count_by_center(rows))
+        self.assertEqual(centers["技术研发中心"], 2)
+        self.assertEqual(centers["运营管理中心"], 1)
+        self.assertEqual(centers["对外合作中心"], 1)
+        self.assertAlmostEqual(sum(centers.values()), len(rows))
+
+    def test_count_by_center_keeps_unmapped_value_apart(self):
+        # 误填成中心名、或乱填的脏数据：单独归一类，不能静默丢掉
+        rows = [row(2, c1="技术研发中心"), row(3, c1="电竞部")]
+        centers = dict((c, n) for c, n, _r in report.count_by_center(rows))
+        self.assertEqual(centers["(志愿不在中心清单内)"], 2)
+
     def test_completeness_buckets_are_mutually_exclusive(self):
-        rows = [row(2, c2="宣传部"),                    # 两个都填
+        rows = [row(2, c2="品牌传播部"),                    # 两个都填
                 row(3, name="李四", sid="2023000002"),  # 只填第一志愿
-                row(4, name="王五", sid="2023000003", c1="", c2="秘书处"),   # 只填第二志愿
+                row(4, name="王五", sid="2023000003", c1="", c2="综合行政部"),   # 只填第二志愿
                 row(5, name="赵六", sid="2023000004", c1="", c2="")]         # 都没填
         stats = dict((label, cnt) for label, cnt, _r in report.count_choice_completeness(rows))
         self.assertEqual(stats["两个志愿都填了"], 1)
@@ -67,7 +83,7 @@ class TestGrouping(unittest.TestCase):
 
 class TestCleanExport(unittest.TestCase):
     def test_clean_export_has_line_number_first(self):
-        rows = [row(7, c1="技术部")]
+        rows = [row(7, c1="项目开发部")]
         exported = report.build_clean_rows(rows, list(common.COLUMNS))
         self.assertEqual(list(exported[0].keys())[0], report.LINE_COLUMN)
         self.assertEqual(exported[0][report.LINE_COLUMN], 7)

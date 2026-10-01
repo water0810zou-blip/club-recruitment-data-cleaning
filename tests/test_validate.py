@@ -25,7 +25,7 @@ EXPECT = os.path.join(ROOT, "tests", "expected_sample_counts.json")
 
 
 def row(line, name="张三", sid="2023000001", email=None,
-        c1="技术部", c2="", ref=""):
+        c1="项目开发部", c2="", ref=""):
     """造一条数据行（不落盘），便于把每条规则单独拎出来测。"""
     if email is None:
         email = f"{sid}@{validate.EMAIL_DOMAIN}" if sid else ""
@@ -109,7 +109,7 @@ class TestRequiredAndWarnings(unittest.TestCase):
         self.assertEqual(issues_of(row(2, c2="", ref="")), [])
 
     def test_same_two_choices_is_warning_only(self):
-        issues = issues_of(row(2, c1="技术部", c2="技术部"))
+        issues = issues_of(row(2, c1="项目开发部", c2="项目开发部"))
         self.assertEqual(categories(issues), ["choice_same"])
         self.assertEqual(issues[0].level, validate.LEVEL_WARN)
 
@@ -146,8 +146,8 @@ class TestDuplicateSignups(unittest.TestCase):
 
 class TestCleanSplit(unittest.TestCase):
     def test_first_submission_kept_others_dropped(self):
-        rows = [row(2, sid="2023000001", c1="技术部"),
-                row(5, name="李四", sid="2023000001", c1="宣传部")]
+        rows = [row(2, sid="2023000001", c1="项目开发部"),
+                row(5, name="李四", sid="2023000001", c1="品牌传播部")]
         issues, groups = validate.validate(rows)
         clean, dropped = validate.split_clean(rows, issues, groups)
         self.assertEqual([r[common.LINE_KEY] for r in clean], [2])
@@ -155,7 +155,7 @@ class TestCleanSplit(unittest.TestCase):
 
     def test_error_rows_are_dropped_warning_rows_are_kept(self):
         rows = [row(2, sid="2023A01234"),            # 错误：学号非纯数字
-                row(3, c1="技术部", c2="技术部"),     # 提示：不算错
+                row(3, c1="项目开发部", c2="项目开发部"),     # 提示：不算错
                 row(4, email="x@qq.com")]           # 错误：邮箱不匹配
         issues, groups = validate.validate(rows)
         clean, dropped = validate.split_clean(rows, issues, groups)

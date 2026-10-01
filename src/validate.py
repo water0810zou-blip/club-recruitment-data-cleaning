@@ -42,10 +42,9 @@ EMAIL_DOMAIN = "smbu.edu.cn"          # 邮箱域名：学号@smbu.edu.cn
 ID_PATTERN = re.compile(r"^[0-9]+$")  # 纯数字 = 全部是半角 0-9
 NAME_PATTERN = re.compile(r"[0-9A-Za-z]")
 
-# 协会现有部门。用于「志愿填了清单外的部门」这条提示级检查，可用 --choices 覆盖。
-DEFAULT_DEPARTMENTS: Tuple[str, ...] = (
-    "技术部", "宣传部", "外联部", "组织部", "文艺部", "体育部", "秘书处", "实践部",
-)
+# 协会现有部门（见 common.py 的 DEPARTMENT_CENTERS 组织结构）。
+# 用于「志愿填了清单外的部门」这条提示级检查，可用 --choices 覆盖。
+DEFAULT_DEPARTMENTS: Tuple[str, ...] = common.DEFAULT_DEPARTMENTS
 
 DEFAULT_ID_LENGTH = 0        # 0 = 不校验学号位数（默认，见 README「假设」）
 
